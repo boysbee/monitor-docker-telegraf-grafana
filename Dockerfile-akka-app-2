@@ -1,0 +1,30 @@
+FROM anapsix/alpine-java:8_server-jre
+
+RUN apk --update add curl
+
+WORKDIR /
+
+USER daemon
+
+ENV JMX_HOST=my-akka-app
+
+ENV JMX_PORT=9090
+
+ADD akka-app/target/scala-2.11/akka-app-assembly-1.0.jar /app/server.jar
+
+EXPOSE 8080
+
+EXPOSE 9090
+
+CMD java -jar \
+  -Xmx128m -Xms128m -server -verbose:gc -XX:+UseG1GC \
+  -Djava.rmi.server.hostname=$JMX_HOST \
+  -Dcom.sun.management.jmxremote \
+  -Dcom.sun.management.jmxremote.port=$JMX_PORT \
+  -Dcom.sun.management.jmxremote.rmi.port=$JMX_PORT \
+  -Dcom.sun.management.jmxremote.local.only=false \
+  -Dcom.sun.management.jmxremote.authenticate=false \
+  -Dcom.sun.management.jmxremote.ssl=false \
+  /app/server.jar
+
+HEALTHCHECK CMD curl --fail http://localhost:8080/ping || exit 1

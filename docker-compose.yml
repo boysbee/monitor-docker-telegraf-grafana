@@ -1,0 +1,46 @@
+  ## InfluxDB container
+  influxdb:
+    image: influxdb:latest
+    restart: always
+    ports:
+      - "8086:8086"
+  ## Telegraf container
+  telegraf:
+    image: telegraf:latest
+    volumes:
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8092:8092/udp"
+      - "8094:8094"
+      - "8125:8125/udp"
+    restart: always
+    links:
+      - influxdb
+      - my-akka-app
+  grafana:
+    image: grafana/grafana
+    restart: always
+    links:
+      - influxdb
+    ports:
+      - "3000:3000"
+  ## my akka-app
+  my-akka-app:
+    build: .
+    dockerfile: Dockerfile-akka-app
+    environment:
+      JMX_HOST: my-akka-app
+      JMX_PORT: 9090
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+  my-akka-app-2:
+    build: .
+    dockerfile: Dockerfile-akka-app-2
+    environment:
+      JMX_HOST: my-akka-app-2
+      JMX_PORT: 9090
+    ports:
+      - "8081:8080"
+      - "9091:9090"
